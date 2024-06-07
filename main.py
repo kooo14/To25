@@ -2,8 +2,8 @@ import os
 import sys
 import time
 
-from PyQt6.QtCore import QPoint, QSize, Qt, QUrl
-from PyQt6.QtGui import QIcon, QPalette, QPixmap
+from PyQt6.QtCore import QPoint, QSize, Qt, QUrl, QRectF
+from PyQt6.QtGui import QIcon, QMouseEvent, QPalette, QPixmap, QPainter, QBrush
 from PyQt6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtWidgets import (
@@ -21,12 +21,15 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-BUTTON_SIZE = 50
+BUTTON_SIZE = 40
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 900
 
 
 class MainWidget(QWidget):
     def __init__(self):
         super().__init__()
+
         # Set window background color
         p = self.palette()
         p.setColor(QPalette.ColorRole.Window, Qt.GlobalColor.gray)
@@ -94,7 +97,7 @@ class MainWidget(QWidget):
         # リピートボタン
         repeatBtn = self.image_button("images/repeat.png")
 
-        etcLayout.addSpacing(80)
+        etcLayout.addSpacing(130 - BUTTON_SIZE)
         etcLayout.addWidget(repeatBtn)
 
         # 動画操作ボタンレイアウト
@@ -119,17 +122,9 @@ class MainWidget(QWidget):
         # ファイルオープンボタン
         openBtn = self.image_button("images/open.png")
 
-        # 保存ボタン
-        saveBtn = self.image_button("images/save.png")
-
-        # Create a QSlider for seeking within the video
-        self.slider = QSlider(Qt.Orientation.Horizontal)
-        self.slider.setRange(0, 0)
-
         # 動画表示ウィジェット
         self.mediaPlayer = CustomMediaPlayer(
             playBtn=self.playBtn,
-            durationSlider=self.slider,
             volumeSlider=volumeSlider,
             muteBtn=muteBtn,
         )
@@ -142,18 +137,21 @@ class MainWidget(QWidget):
         volumeSlider.valueChanged.connect(self.mediaPlayer.set_volume)
         self.playBtn.clicked.connect(self.mediaPlayer.play_video)
         openBtn.clicked.connect(self.mediaPlayer.open_file)
-        self.slider.sliderMoved.connect(self.mediaPlayer.set_position)
         muteBtn.clicked.connect(self.mediaPlayer.toggle_mute)
         backBtn.clicked.connect(self.mediaPlayer.skip_seconds_func(-10))
         forwardBtn.clicked.connect(self.mediaPlayer.skip_seconds_func(10))
 
         # Create a QVBoxLayout for arranging widgets vertically
+        controlLayout = QVBoxLayout()
+        controlLayout.setContentsMargins(10, 10, 10, 10)
+        controlLayout.addWidget(self.mediaPlayer.seekbar)
+        controlLayout.addLayout(videoControlLayout)
+
         vboxLayout = QVBoxLayout()
         vboxLayout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         vboxLayout.setContentsMargins(0, 0, 0, 0)
         vboxLayout.addWidget(self.videowidget)
-        vboxLayout.addLayout(videoControlLayout)
-        vboxLayout.addWidget(self.slider)
+        vboxLayout.addLayout(controlLayout)
         vboxLayout.addStretch()
 
         # Set the layout of the window
@@ -167,45 +165,51 @@ class MainWidget(QWidget):
 
 class Window(QMainWindow):
     def __init__(self):
+        global WINDOW_WIDTH, WINDOW_HEIGHT
+
         super().__init__()
         # Get the size of the display
         screen = QApplication.primaryScreen()
         self.screen_size = screen.size()
 
-        width = int(self.screen_size.width() / 1.5)
-        height = int(self.screen_size.height() / 1.2)
+        WINDOW_WIDTH = int(self.screen_size.width() / 1.5)
+        WINDOW_HEIGHT = int(self.screen_size.height() / 1.3)
 
-        self.move(
-            int((self.screen_size.width() - width) / 2),
-            int((self.screen_size.height() - height) / 2),
-        )
-        # Set window properties such as title, size, and icon
+        # self.move(
+        #     int((self.screen_size.width() - WINDOW_WIDTH) / 2),
+        #     int((self.screen_size.height() - WINDOW_WIDTH) / 2),
+        # )
+
         self.setWindowTitle("To25")
-        self.setFixedSize(width, height)
+        # self.setFixedSize(WINDOW_WIDTH, WINDOW_WIDTH)
+        self.setFixedWidth(WINDOW_WIDTH)
         self.setWindowIcon(QIcon("player.png"))
 
         self.main_widget = MainWidget()
         self.setCentralWidget(self.main_widget)
 
         self.show()
+        self.move(0, 0)
 
 
 class CustomMediaPlayer(QMediaPlayer):
     def __init__(
         self,
         playBtn: QPushButton,
-        durationSlider: QSlider,
         volumeSlider: QSlider,
         muteBtn: QPushButton,
         parent=None,
     ):
         super().__init__(parent=parent)
 
-        self.durationSlider = durationSlider
+        self.seekbar = SeekBar(self)
+
         self.playBtn = playBtn
         self.volumeSlider = volumeSlider
         self.muteBtn = muteBtn
         self.isMute = False
+        self.isSeeking = False
+        self.pausedBySeeking = False
         self.volume = 100
 
         # Create QAudioOutput instance and set it to the media player
@@ -214,11 +218,10 @@ class CustomMediaPlayer(QMediaPlayer):
 
         # Connect media player signals to their respective slots
         self.playbackStateChanged.connect(self.mediastate_changed)
-        self.positionChanged.connect(self.position_changed)
-        self.durationChanged.connect(self.duration_changed)
+        self.durationChanged.connect(self.seekbar.durationChanged)
+        self.positionChanged.connect(self.seekbar.positionChanged)
 
         # DEBUG
-
         self.setSource(QUrl.fromLocalFile("test/center.mp4"))
         self.playBtn.setEnabled(True)
         self.play_video()
@@ -243,18 +246,11 @@ class CustomMediaPlayer(QMediaPlayer):
 
     # Method to handle changes in media player state (playing or paused)
     def mediastate_changed(self, state):
-        if self.PlaybackState.PlayingState == True:
-            self.playBtn.setIcon(QIcon(os.getcwd() + "/images/pause.png"))
-        else:
-            self.playBtn.setIcon(QIcon(os.getcwd() + "/images/play.png"))
-
-    # Method to handle changes in video position
-    def position_changed(self, position):
-        self.durationSlider.setValue(position)
-
-    # Method to handle changes in video duration
-    def duration_changed(self, duration):
-        self.durationSlider.setRange(0, duration)
+        if self.isSeeking is False:
+            if self.isPlaying() == True:
+                self.playBtn.setIcon(QIcon(os.getcwd() + "/images/pause.png"))
+            else:
+                self.playBtn.setIcon(QIcon(os.getcwd() + "/images/play.png"))
 
     # Method to set the video position
     def set_position(self, position):
@@ -283,11 +279,79 @@ class CustomMediaPlayer(QMediaPlayer):
             self.volumeSlider.setValue(self.volume)
             self.muteBtn.setIcon(QIcon(os.getcwd() + "/images/volume.png"))
 
+    def set_is_seeking(self, isSeeking):
+        self.isSeeking = isSeeking
+        if self.isPlaying() or self.pausedBySeeking:
+            if isSeeking:
+                self.pause()
+                self.pausedBySeeking = True
+            elif self.pausedBySeeking:
+                self.play()
+                self.pausedBySeeking = False
+
     def skip_seconds_func(self, seconds):
         def skip_seconds(self, seconds=seconds, mediaPlayer=self):
             mediaPlayer.setPosition(mediaPlayer.position() + seconds * 1000)
 
         return skip_seconds
+
+
+class SeekBar(QWidget):
+    def __init__(self, mediaPlayer: CustomMediaPlayer):
+        super().__init__()
+
+        self.duration = 0
+        self.position = 0
+        self.mediaPlayer = mediaPlayer
+
+        # self.setFixedSize(WINDOW_WIDTH, 30)
+        self.setFixedHeight(30)
+        self.setMouseTracking(True)
+
+    def durationChanged(self, duration):
+        self.duration = duration
+
+    def positionChanged(self, position):
+        self.position = position
+        self.update()
+
+    def paintEvent(self, event):
+        if self.duration == 0:
+            return
+        p = QPainter(self)
+        if p.isActive() == False:
+            p.begin(self)
+
+        p.setPen(Qt.GlobalColor.red)
+        p.setBrush(Qt.GlobalColor.red)
+        center = int(self.width() * self.position / self.duration)
+        p.drawRect(center - 1, 0, 1, self.height())
+
+        p.setPen(Qt.GlobalColor.black)
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        rectangle = QRectF(0, 0, self.width(), self.height())
+        p.drawRoundedRect(rectangle, 5, 5)
+        p.end()
+
+    def mouseMoveEvent(self, a0: QMouseEvent) -> None:
+
+        if a0.buttons() == Qt.MouseButton.LeftButton and self.duration != 0:
+            self.seek(a0.pos().x())
+        return super().mouseMoveEvent(a0)
+
+    def mousePressEvent(self, a0: QMouseEvent) -> None:
+        if self.duration != 0:
+            self.seek(a0.pos().x())
+            self.mediaPlayer.set_is_seeking(True)
+        return super().mousePressEvent(a0)
+
+    def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
+        if self.duration != 0:
+            self.mediaPlayer.set_is_seeking(False)
+
+    def seek(self, mousePos: int):
+        position = int(mousePos / self.width() * self.duration)
+        self.mediaPlayer.setPosition(position)
 
 
 if __name__ == "__main__":
