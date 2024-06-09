@@ -363,6 +363,7 @@ class Window(QMainWindow):
 
         super().__init__()
         self.settings = settings.Settings()
+        exitSettings = self.settings.load()
         # ディスプレイのサイズを取得
         screen = QApplication.primaryScreen()
         self.screen_size = screen.size()
@@ -393,6 +394,11 @@ class Window(QMainWindow):
 
         self.show()
         self.move(0, 0)
+
+        if exitSettings is False:
+            welcomeWindow = WelcomeWindow()
+            welcomeWindow.exec()
+            self.open_settings()
 
         self.autoLoadClip()
 
@@ -891,6 +897,7 @@ class ExportWindow(QDialog):
         self.cancelButton.clicked.connect(self.close)
 
         outputPathLabel = QLabel("出力フォルダ")
+        outputPathLabel.setMinimumWidth(60)
         outputPathLabel.setToolTip(
             "動画が出力されるフォルダを指定します。"
         )
@@ -901,13 +908,13 @@ class ExportWindow(QDialog):
         outputPathButton.clicked.connect(self.open_output_path_dialog)
 
         outputFileNameLabel = QLabel("ファイル名")
+        outputFileNameLabel.setMinimumWidth(60)
         outputFileNameLabel.setToolTip(
             "動画のファイル名を指定します。拡張子は不要です。"
         )
         self.outputFileNameEdit = QLineEdit()
         self.outputFileNameEdit.setMinimumWidth(200)
-        self.outputFileNameEdit.setText(".".join(self.inputPath.split("/")[-1].split(".")[:-1])
-)
+        self.outputFileNameEdit.setText(".".join(self.inputPath.split("/")[-1].split(".")[:-1]) + "_comp")
 
         pathLayout = QGridLayout()
         pathLayout.addWidget(outputPathLabel, 1, 0)
@@ -996,6 +1003,49 @@ class ExportWindow(QDialog):
         QMessageBox.warning(self, "保存失敗", "保存に失敗しました。")
 
         self.close()
+
+class WelcomeWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("To25")
+        self.setWindowIcon(QIcon("images/icon.png"))
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.init_ui()
+
+    def init_ui(self):
+        # メッセージ
+        messageLabel = QLabel(
+            "To25へようこそ！\n\n"
+            + "To25は、簡単にクリップを編集し容量を圧縮できるソフトウェアです。\n\n"
+            + "使い方は簡単です。起動時に最新の動画の再生、またはファイル選択画面が表示されます。\n"
+            + "動画を再生すると、トリミング開始地点とトリミング終了地点を設定することができます。\n"
+            + "設定が完了したら、保存ボタンを押して動画を保存してください。\n\n"
+            + "設定を変更する場合は、メニューの「編集」→「設定」を押してください。\n\n"
+            + "To25をお楽しみください！"
+        )
+        messageLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        attentionLabel = QLabel("注意")
+        attentionLabel.setStyleSheet("font-size: 15px; font-weight: bold;")
+
+        attentionMessage = QLabel(
+            "注意：初回起動のため、設定画面が表示されます。\n"
+            "インスタントリプレイが保存されるフォルダを指定してください。\n"
+            "正しく指定しないと、起動時の自動再生ができません。"
+        )
+
+        # 閉じるボタン
+        closeButton = QPushButton("閉じる")
+        closeButton.clicked.connect(self.close)
+
+        self.layout.addWidget(messageLabel)
+        self.layout.addWidget(attentionLabel)
+        self.layout.addWidget(attentionMessage)
+        self.layout.addWidget(closeButton)
 
 
 def getFileSizeKB(filePath):
