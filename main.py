@@ -485,6 +485,7 @@ class Window(QMainWindow):
                 self.open()
         else:
             self.statusBar().showMessage("クリップ自動再生が無効です。", 5000)
+            self.open()
 
 
 class CustomMediaPlayer(QMediaPlayer):
