@@ -267,24 +267,12 @@ class SettingWindow(QDialog):
         clipPathButton = QPushButton("参照")
         clipPathButton.clicked.connect(self.open_clip_path_dialog)
 
-        outputPathLabel = QLabel("出力フォルダ")
-        outputPathLabel.setToolTip(
-            "動画が出力されるフォルダを指定します。ファイル名は自動でつけられます。"
-        )
-        self.outputPathEdit = QLineEdit()
-        self.outputPathEdit.setMinimumWidth(200)
-        self.outputPathEdit.setText(self.settings.settings["outputPath"])
-        outputPathButton = QPushButton("参照")
-        outputPathButton.clicked.connect(self.open_output_path_dialog)
-
+ 
         # フォルダ設定レイアウト
         pathLayout = QGridLayout()
         pathLayout.addWidget(clipPathLabel, 0, 0)
         pathLayout.addWidget(self.clipPathEdit, 0, 1)
         pathLayout.addWidget(clipPathButton, 0, 2)
-        pathLayout.addWidget(outputPathLabel, 1, 0)
-        pathLayout.addWidget(self.outputPathEdit, 1, 1)
-        pathLayout.addWidget(outputPathButton, 1, 2)
 
         # 基本設定
         baseSettings = QLabel("設定")
@@ -332,11 +320,6 @@ class SettingWindow(QDialog):
         if folder:
             self.clipPathEdit.setText(folder)
 
-    def open_output_path_dialog(self):
-        folder = QFileDialog.getExistingDirectory(self, "出力フォルダを選択")
-        if folder:
-            self.outputPathEdit.setText(folder)
-
     def save_settings(self):
         output = self.outputSettingLayout.getOutputSetting()
 
@@ -350,7 +333,7 @@ class SettingWindow(QDialog):
             self.openFolderAfterExport.isChecked()
         )
         self.settings.settings["clipPath"] = self.clipPathEdit.text()
-        self.settings.settings["outputPath"] = self.outputPathEdit.text()
+        self.settings.settings["outputPath"] = self.outputSettingLayout.outputPathEdit.text()
 
         self.settings.save()
         self.settings.check()
@@ -834,11 +817,36 @@ class OutputSetting(QGridLayout):
         self.noAudioCheckBox.setChecked(
             self.settings.settings["defaultOptions"]["noAudio"]
         )
+
         otherLayout.addWidget(self.noAudioCheckBox)
         otherLayout.addStretch()
-
         otherBox.setLayout(otherLayout)
+
         self.addWidget(otherBox, 1, 1)
+
+        # 出力フォルダ設定
+        outputPathLabel = QLabel("出力フォルダ")
+        outputPathLabel.setMinimumWidth(60)
+        outputPathLabel.setToolTip(
+            "動画が出力されるフォルダを指定します。"
+        )
+        self.outputPathEdit = QLineEdit()
+        self.outputPathEdit.setMinimumWidth(200)
+        self.outputPathEdit.setText(self.settings.settings["outputPath"])
+        outputPathButton = QPushButton("参照")
+        outputPathButton.clicked.connect(self.open_output_path_dialog)
+
+        pathLayout = QGridLayout()
+        pathLayout.addWidget(outputPathLabel, 1, 0)
+        pathLayout.addWidget(self.outputPathEdit, 1, 1)
+        pathLayout.addWidget(outputPathButton, 1, 2)
+
+        self.addLayout(pathLayout, 2, 0, 1, 2)
+
+    def open_output_path_dialog(self):
+        folder = QFileDialog.getExistingDirectory(None, "保存先を選択", self.settings.settings["outputPath"])
+        if folder:
+            self.outputPathEdit.setText(folder)
 
     # スロット関数の定義
     def on_sizeRadioButton_toggled(self, checked):
@@ -897,17 +905,6 @@ class ExportWindow(QDialog):
         self.cancelButton = QPushButton("キャンセル")
         self.cancelButton.clicked.connect(self.close)
 
-        outputPathLabel = QLabel("出力フォルダ")
-        outputPathLabel.setMinimumWidth(60)
-        outputPathLabel.setToolTip(
-            "動画が出力されるフォルダを指定します。"
-        )
-        self.outputPathEdit = QLineEdit()
-        self.outputPathEdit.setMinimumWidth(200)
-        self.outputPathEdit.setText(self.settings.settings["outputPath"])
-        outputPathButton = QPushButton("参照")
-        outputPathButton.clicked.connect(self.open_output_path_dialog)
-
         outputFileNameLabel = QLabel("ファイル名")
         outputFileNameLabel.setMinimumWidth(60)
         outputFileNameLabel.setToolTip(
@@ -917,10 +914,7 @@ class ExportWindow(QDialog):
         self.outputFileNameEdit.setMinimumWidth(200)
         self.outputFileNameEdit.setText(".".join(self.inputPath.split("/")[-1].split(".")[:-1]) + "_comp")
 
-        pathLayout = QGridLayout()
-        pathLayout.addWidget(outputPathLabel, 1, 0)
-        pathLayout.addWidget(self.outputPathEdit, 1, 1)
-        pathLayout.addWidget(outputPathButton, 1, 2)
+
 
         fileNameLayout = QGridLayout()
         fileNameLayout.addWidget(outputFileNameLabel, 1, 0)
@@ -931,25 +925,19 @@ class ExportWindow(QDialog):
         confirmLayout.addWidget(self.cancelButton)
         confirmLayout.addWidget(self.saveButton)
         self.layout.addLayout(self.outputSettingLayout)
-        self.layout.addLayout(pathLayout)
         self.layout.addLayout(fileNameLayout)
         self.layout.addLayout(confirmLayout)
-
-    def open_output_path_dialog(self):
-        folder = QFileDialog.getExistingDirectory(self, "保存先を選択")
-        if folder:
-            self.outputPathEdit.setText(folder)
 
     def export_video(self):
         output = self.outputSettingLayout.getOutputSetting()
 
-        if os.path.exists(self.outputPathEdit.text()) is False:
+        if os.path.exists(self.outputSettingLayout.outputPathEdit.text()) is False:
             QMessageBox.warning(self, "保存失敗", "出力フォルダが存在しません。")
             return
 
         fileName = self.outputFileNameEdit.text()
         outputPath = "{}/{}.mp4".format(
-            self.outputPathEdit.text(), fileName
+            self.outputSettingLayout.outputPathEdit.text(), fileName
         )
 
         args = (
@@ -986,7 +974,7 @@ class ExportWindow(QDialog):
         progress.setValue(int(output["size"]) * 1024)
 
         if getFileSizeKB(outputPath) != 0:
-            self.exportDone(self.outputPathEdit.text())
+            self.exportDone(self.outputSettingLayout.outputPathEdit.text())
         else:
             self.exportFailed()
 
