@@ -77,6 +77,7 @@ Discordの無料ユーザーは25MB、Discord Nitro Basicユーザーは50MB、D
 
 # 設定
 左上のメニューバーの編集→設定より開くことが出来ます。
+
 ![設定画面](description/setting.png)
 
 ### クリップ自動再生
