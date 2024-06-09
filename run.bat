@@ -1,40 +1,37 @@
 @echo off
+chcp 65001
 setlocal
 
-REM Python のインストールを確認
 python --version
 if %errorlevel% neq 0 (
-    echo Python がインストールされていません。インストール後、再度実行してください。
+    echo Python not found.
     pause
     exit /b 1
 )
 
-REM 仮想環境の有無を確認し、なければ作成して有効化
 if exist "venv\Scripts\activate.bat" (
-    echo 仮想環境を読み込みます...
+    echo Loading the virtual environment...
     call "venv\Scripts\activate.bat"
 ) else (
-    echo 仮想環境が見つかりません。新しい仮想環境を作成します...
+    echo Could not find the virtual environment.
     python -m venv venv
-    echo 仮想環境を読み込みます...
+    echo Loading the virtual environment...
     call "venv\Scripts\activate.bat"
     python -m pip install --upgrade pip
-    REM Install required packages
     if exist "requirements.txt" (
-        echo ライブラリをインストールします...
+        echo Installing the required packages...
         pip install -r requirements.txt
     ) else (
-        echo requirements.txt が見つかりません。
+        echo requirements.txt not found.
     )
 )
 
 
-REM Run the main Python script
 if exist "main.py" (
-    echo メインスクリプトを実行します...
+    echo Running main.py...
     python main.py
 ) else (
-    echo main.py が見つかりません。
+    echo main.py not found.
 )
 
 endlocal
