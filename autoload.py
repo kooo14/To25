@@ -13,7 +13,8 @@ def getVideoFiles(path: str, maxDepth=5):
         if depth > maxDepth:
             continue
         for file in fs:
-            files.append(os.path.join(root, file))
+            if file.split(".")[-1] in videoExtensions:
+                files.append(os.path.join(root, file))
     return files
 
 
