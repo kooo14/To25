@@ -15,9 +15,9 @@ if exist "venv\Scripts\activate.bat" (
 ) else (
     echo 仮想環境が見つかりません。新しい仮想環境を作成します...
     python -m venv venv
-    python -m pip install --upgrade pip
     echo 仮想環境を読み込みます...
     call "venv\Scripts\activate.bat"
+    python -m pip install --upgrade pip
     REM Install required packages
     if exist "requirements.txt" (
         echo ライブラリをインストールします...
