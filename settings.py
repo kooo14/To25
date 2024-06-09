@@ -63,5 +63,5 @@ class Settings:
 exportSettings = {
     "resolution": ["1920x1080", "1280x720", "640x360"],
     "frameRate": [60, 30, 15],
-    "size": [200, 25, "入力"],
+    "size": [500,50, 25, "入力"],
 }
