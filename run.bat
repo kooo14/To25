@@ -1,40 +1,40 @@
 @echo off
 setlocal
 
-REM Python ‚ÌƒCƒ“ƒXƒg[ƒ‹‚ğŠm”F
+REM Python ã®ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã‚’ç¢ºèª
 python --version
 if %errorlevel% neq 0 (
-    echo Python ‚ªƒCƒ“ƒXƒg[ƒ‹‚³‚ê‚Ä‚¢‚Ü‚¹‚ñBƒCƒ“ƒXƒg[ƒ‹ŒãAÄ“xÀs‚µ‚Ä‚­‚¾‚³‚¢B
+    echo Python ãŒã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«å¾Œã€å†åº¦å®Ÿè¡Œã—ã¦ãã ã•ã„ã€‚
     pause
     exit /b 1
 )
 
-REM ‰¼‘zŠÂ‹«‚Ì—L–³‚ğŠm”F‚µA‚È‚¯‚ê‚Îì¬‚µ‚Ä—LŒø‰»
+REM ä»®æƒ³ç’°å¢ƒã®æœ‰ç„¡ã‚’ç¢ºèªã—ã€ãªã‘ã‚Œã°ä½œæˆã—ã¦æœ‰åŠ¹åŒ–
 if exist "venv\Scripts\activate.bat" (
-    echo ‰¼‘zŠÂ‹«‚ğ“Ç‚İ‚İ‚Ü‚·...
+    echo ä»®æƒ³ç’°å¢ƒã‚’èª­ã¿è¾¼ã¿ã¾ã™...
     call "venv\Scripts\activate.bat"
 ) else (
-    echo ‰¼‘zŠÂ‹«‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñBV‚µ‚¢‰¼‘zŠÂ‹«‚ğì¬‚µ‚Ü‚·...
+    echo ä»®æƒ³ç’°å¢ƒãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚æ–°ã—ã„ä»®æƒ³ç’°å¢ƒã‚’ä½œæˆã—ã¾ã™...
     python -m venv venv
-    echo ‰¼‘zŠÂ‹«‚ğ“Ç‚İ‚İ‚Ü‚·...
+    echo ä»®æƒ³ç’°å¢ƒã‚’èª­ã¿è¾¼ã¿ã¾ã™...
     call "venv\Scripts\activate.bat"
     python -m pip install --upgrade pip
     REM Install required packages
     if exist "requirements.txt" (
-        echo ƒ‰ƒCƒuƒ‰ƒŠ‚ğƒCƒ“ƒXƒg[ƒ‹‚µ‚Ü‚·...
+        echo ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ã¾ã™...
         pip install -r requirements.txt
     ) else (
-        echo requirements.txt ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB
+        echo requirements.txt ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚
     )
 )
 
 
 REM Run the main Python script
 if exist "main.py" (
-    echo ƒƒCƒ“ƒXƒNƒŠƒvƒg‚ğÀs‚µ‚Ü‚·...
+    echo ãƒ¡ã‚¤ãƒ³ã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’å®Ÿè¡Œã—ã¾ã™...
     python main.py
 ) else (
-    echo main.py ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB
+    echo main.py ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚
 )
 
 endlocal
