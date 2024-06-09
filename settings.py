@@ -5,8 +5,6 @@ import os
 class Settings:
     def __init__(self):
         self.settings = {}
-        self.load()
-        self.check()
 
     def reset(self):
         default = {
@@ -29,8 +27,11 @@ class Settings:
         try:
             with open("settings.json", "r") as f:
                 self.settings = json.load(f)
+                self.check()
+            return True
         except:
             self.reset()
+            return False
 
     def save(self):
         with open("settings.json", "w") as f:
@@ -53,7 +54,9 @@ class Settings:
                     "frameRate"
                 ][1]
 
-        except:
+        except Exception as e:
+            print(e)
+            print("Settings file is corrupted. Resetting to default.")
             self.reset()
 
 
