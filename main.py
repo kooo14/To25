@@ -1,60 +1,26 @@
 import os
+import subprocess
 import sys
 import threading
 import time
-import subprocess
 
-from PyQt6.QtCore import (
-    QCoreApplication,
-    QEvent,
-    QPoint,
-    QRectF,
-    QSize,
-    QStandardPaths,
-    Qt,
-    QUrl,
-)
-from PyQt6.QtGui import (
-    QBrush,
-    QColor,
-    QIcon,
-    QMouseEvent,
-    QPainter,
-    QPalette,
-    QPen,
-    QPixmap,
-)
-from PyQt6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaFormat, QMediaPlayer
+from PyQt6.QtCore import (QCoreApplication, QEvent, QPoint, QRectF, QSize,
+                          QStandardPaths, Qt, QUrl)
+from PyQt6.QtGui import (QBrush, QColor, QIcon, QMouseEvent, QPainter,
+                         QPalette, QPen, QPixmap)
+from PyQt6.QtMultimedia import (QAudioOutput, QMediaDevices, QMediaFormat,
+                                QMediaPlayer)
 from PyQt6.QtMultimediaWidgets import QVideoWidget
-from PyQt6.QtWidgets import (
-    QApplication,
-    QButtonGroup,
-    QCheckBox,
-    QDialog,
-    QFileDialog,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QProgressBar,
-    QPushButton,
-    QRadioButton,
-    QSizePolicy,
-    QSlider,
-    QSpacerItem,
-    QSpinBox,
-    QStyle,
-    QVBoxLayout,
-    QWidget,
-    QMessageBox,
-)
+from PyQt6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QDialog,
+                             QFileDialog, QGridLayout, QGroupBox, QHBoxLayout,
+                             QLabel, QLineEdit, QMainWindow, QMessageBox,
+                             QProgressBar, QPushButton, QRadioButton,
+                             QSizePolicy, QSlider, QSpacerItem, QSpinBox,
+                             QStyle, QVBoxLayout, QWidget)
 
 import autoload
 import expoter
 import settings
-
 
 BUTTON_SIZE = 40
 WINDOW_WIDTH = 1280
@@ -926,7 +892,7 @@ class ExportWindow(QDialog):
 
         outputPathLabel = QLabel("出力フォルダ")
         outputPathLabel.setToolTip(
-            "動画が出力されるフォルダを指定します。ファイル名は自動でつけられます。"
+            "動画が出力されるフォルダを指定します。"
         )
         self.outputPathEdit = QLineEdit()
         self.outputPathEdit.setMinimumWidth(200)
@@ -934,10 +900,23 @@ class ExportWindow(QDialog):
         outputPathButton = QPushButton("参照")
         outputPathButton.clicked.connect(self.open_output_path_dialog)
 
+        outputFileNameLabel = QLabel("ファイル名")
+        outputFileNameLabel.setToolTip(
+            "動画のファイル名を指定します。拡張子は不要です。"
+        )
+        self.outputFileNameEdit = QLineEdit()
+        self.outputFileNameEdit.setMinimumWidth(200)
+        self.outputFileNameEdit.setText(".".join(self.inputPath.split("/")[-1].split(".")[:-1])
+)
+
         pathLayout = QGridLayout()
         pathLayout.addWidget(outputPathLabel, 1, 0)
         pathLayout.addWidget(self.outputPathEdit, 1, 1)
         pathLayout.addWidget(outputPathButton, 1, 2)
+
+        fileNameLayout = QGridLayout()
+        fileNameLayout.addWidget(outputFileNameLabel, 1, 0)
+        fileNameLayout.addWidget(self.outputFileNameEdit, 1, 1)
 
         # レイアウトをセット
         confirmLayout = QHBoxLayout()
@@ -945,6 +924,7 @@ class ExportWindow(QDialog):
         confirmLayout.addWidget(self.saveButton)
         self.layout.addLayout(self.outputSettingLayout)
         self.layout.addLayout(pathLayout)
+        self.layout.addLayout(fileNameLayout)
         self.layout.addLayout(confirmLayout)
 
     def open_output_path_dialog(self):
@@ -959,9 +939,9 @@ class ExportWindow(QDialog):
             QMessageBox.warning(self, "保存失敗", "出力フォルダが存在しません。")
             return
 
-        fileName = self.inputPath.split("/")[-1].split(".")[0]
-        outputPath = "{}/{}_comp.mp4".format(
-            self.settings.settings["outputPath"], fileName
+        fileName = self.outputFileNameEdit.text()
+        outputPath = "{}/{}.mp4".format(
+            self.outputPathEdit.text(), fileName
         )
 
         args = (
@@ -998,7 +978,7 @@ class ExportWindow(QDialog):
         progress.setValue(int(output["size"]) * 1024)
 
         if getFileSizeKB(outputPath) != 0:
-            self.exportDone(self.settings.settings["outputPath"])
+            self.exportDone(self.outputPathEdit.text())
         else:
             self.exportFailed()
 

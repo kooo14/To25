@@ -5,6 +5,7 @@ REM Python のインストールを確認
 python --version
 if %errorlevel% neq 0 (
     echo Python がインストールされていません。インストール後、再度実行してください。
+    pause
     exit /b 1
 )
 
