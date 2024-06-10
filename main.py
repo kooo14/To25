@@ -4,19 +4,52 @@ import sys
 import threading
 import time
 
-from PyQt6.QtCore import (QCoreApplication, QEvent, QPoint, QRectF, QSize,
-                          QStandardPaths, Qt, QUrl)
-from PyQt6.QtGui import (QBrush, QColor, QIcon, QMouseEvent, QPainter,
-                         QPalette, QPen, QPixmap)
-from PyQt6.QtMultimedia import (QAudioOutput, QMediaDevices, QMediaFormat,
-                                QMediaPlayer)
+from PyQt6.QtCore import (
+    QCoreApplication,
+    QEvent,
+    QPoint,
+    QRectF,
+    QSize,
+    QStandardPaths,
+    Qt,
+    QUrl,
+)
+from PyQt6.QtGui import (
+    QBrush,
+    QColor,
+    QIcon,
+    QMouseEvent,
+    QPainter,
+    QPalette,
+    QPen,
+    QPixmap,
+)
+from PyQt6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaFormat, QMediaPlayer
 from PyQt6.QtMultimediaWidgets import QVideoWidget
-from PyQt6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QDialog,
-                             QFileDialog, QGridLayout, QGroupBox, QHBoxLayout,
-                             QLabel, QLineEdit, QMainWindow, QMessageBox,
-                             QProgressBar, QPushButton, QRadioButton,
-                             QSizePolicy, QSlider, QSpacerItem, QSpinBox,
-                             QStyle, QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QButtonGroup,
+    QCheckBox,
+    QDialog,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QRadioButton,
+    QSizePolicy,
+    QSlider,
+    QSpacerItem,
+    QSpinBox,
+    QStyle,
+    QVBoxLayout,
+    QWidget,
+)
 
 import autoload
 import expoter
@@ -267,7 +300,6 @@ class SettingWindow(QDialog):
         clipPathButton = QPushButton("参照")
         clipPathButton.clicked.connect(self.open_clip_path_dialog)
 
- 
         # フォルダ設定レイアウト
         pathLayout = QGridLayout()
         pathLayout.addWidget(clipPathLabel, 0, 0)
@@ -333,7 +365,9 @@ class SettingWindow(QDialog):
             self.openFolderAfterExport.isChecked()
         )
         self.settings.settings["clipPath"] = self.clipPathEdit.text()
-        self.settings.settings["outputPath"] = self.outputSettingLayout.outputPathEdit.text()
+        self.settings.settings["outputPath"] = (
+            self.outputSettingLayout.outputPathEdit.text()
+        )
 
         self.settings.save()
         self.settings.check()
@@ -642,6 +676,21 @@ class SeekBar(QWidget):
         self.nowTrimStartPositon = 0
         self.nowTrimEndPositon = 0
 
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+
+        self.positionLabel = QLabel("0:00:00")
+        self.positionLabel.setFixedWidth(60)
+        self.positionLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.positionLabel)
+
+        self.remainSecondsLabel = QLabel("0:00:00")
+        self.remainSecondsLabel.setFixedWidth(60)
+        self.remainSecondsLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addStretch()
+        self.layout.addWidget(self.remainSecondsLabel)
+
     # 動画の長さが変更されたときの処理
     def durationChanged(self, duration):
         self.duration = duration
@@ -651,6 +700,12 @@ class SeekBar(QWidget):
     # 再生位置が変更されたときの処理
     def positionChanged(self, position):
         self.position = position
+        self.positionLabel.setText(
+            time.strftime("%H:%M:%S", time.gmtime(position / 1000))
+        )
+        self.remainSecondsLabel.setText(
+            time.strftime("%H:%M:%S", time.gmtime((self.duration - position) / 1000))
+        )
         self.update()
 
     # 描画処理
@@ -827,9 +882,7 @@ class OutputSetting(QGridLayout):
         # 出力フォルダ設定
         outputPathLabel = QLabel("出力フォルダ")
         outputPathLabel.setMinimumWidth(60)
-        outputPathLabel.setToolTip(
-            "動画が出力されるフォルダを指定します。"
-        )
+        outputPathLabel.setToolTip("動画が出力されるフォルダを指定します。")
         self.outputPathEdit = QLineEdit()
         self.outputPathEdit.setMinimumWidth(200)
         self.outputPathEdit.setText(self.settings.settings["outputPath"])
@@ -844,7 +897,9 @@ class OutputSetting(QGridLayout):
         self.addLayout(pathLayout, 2, 0, 1, 2)
 
     def open_output_path_dialog(self):
-        folder = QFileDialog.getExistingDirectory(None, "保存先を選択", self.settings.settings["outputPath"])
+        folder = QFileDialog.getExistingDirectory(
+            None, "保存先を選択", self.settings.settings["outputPath"]
+        )
         if folder:
             self.outputPathEdit.setText(folder)
 
@@ -912,9 +967,9 @@ class ExportWindow(QDialog):
         )
         self.outputFileNameEdit = QLineEdit()
         self.outputFileNameEdit.setMinimumWidth(200)
-        self.outputFileNameEdit.setText(".".join(self.inputPath.split("/")[-1].split(".")[:-1]) + "_comp")
-
-
+        self.outputFileNameEdit.setText(
+            ".".join(self.inputPath.split("/")[-1].split(".")[:-1]) + "_comp"
+        )
 
         fileNameLayout = QGridLayout()
         fileNameLayout.addWidget(outputFileNameLabel, 1, 0)
@@ -992,6 +1047,7 @@ class ExportWindow(QDialog):
         QMessageBox.warning(self, "保存失敗", "保存に失敗しました。")
 
         self.close()
+
 
 class WelcomeWindow(QDialog):
     def __init__(self):
