@@ -165,3 +165,5 @@ test/
 settings.json
 *.pptx
 build.bat
+installer.iss
+Output/
