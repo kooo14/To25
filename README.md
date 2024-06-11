@@ -1,11 +1,11 @@
-# To25 v1.0
+# To25 v1.0.0
 To25へようこそ！
 To25はDiscord向けのクリップ作成ソフトウェアです。
 
 # ダウンロード
 対応OS: Windows10, Windows11
 
-インストーラー版（通常はこちら）：準備中
+**インストーラー版（通常はこちら）**：[インストーラー版をダウンロード](https://github.com/kooo14/To25/releases/download/v1.0.0/To25-Windows-Installer.exe)
 
 ソースコードから実行：[こちらを参考](#ソースコードから実行する方法)
 
