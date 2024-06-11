@@ -1,5 +1,10 @@
 import json
 import os
+from pathlib import Path
+
+settingFolderPath = Path(os.getenv("APPDATA")) / "To25"
+settingFolderPath.mkdir(parents=True, exist_ok=True)
+settingFilePath = settingFolderPath / "settings.json"
 
 
 class Settings:
@@ -25,7 +30,7 @@ class Settings:
 
     def load(self):
         try:
-            with open("settings.json", "r") as f:
+            with open(settingFilePath, "r") as f:
                 self.settings = json.load(f)
                 self.check()
             return True
@@ -34,7 +39,7 @@ class Settings:
             return False
 
     def save(self):
-        with open("settings.json", "w") as f:
+        with open(settingFilePath, "w") as f:
             json.dump(self.settings, f)
 
     def check(self):
@@ -63,5 +68,5 @@ class Settings:
 exportSettings = {
     "resolution": ["1920x1080", "1280x720", "640x360"],
     "frameRate": [60, 30, 15],
-    "size": [500,50, 25, "入力"],
+    "size": [500, 50, 25, "カスタム"],
 }
