@@ -54,6 +54,7 @@ from PyQt6.QtWidgets import (
 import autoload
 import expoter
 import settings
+import webbrowser
 
 BUTTON_SIZE = 40
 WINDOW_WIDTH = 1280
@@ -69,14 +70,14 @@ class MainWidget(QWidget):
         self.settings = setting
 
         # UIの初期化
-        self.init_ui()
+        self.setUpUI()
         self.setAcceptDrops(True)
         # ウィンドウの表示
         self.show()
 
-    def image_button(self, icon_path: str, size=BUTTON_SIZE, icon_padding=10):
+    def createImageButton(self, iconFilePath: str, size=BUTTON_SIZE, iconPadding=10):
         button = QPushButton()
-        img = QPixmap(icon_path).scaled(
+        img = QPixmap(iconFilePath).scaled(
             size,
             size,
             Qt.AspectRatioMode.KeepAspectRatio,
@@ -85,7 +86,7 @@ class MainWidget(QWidget):
 
         # ボタンのアイコンとサイズを設定
         button.setIcon(QIcon(img))
-        button.setIconSize(QSize(size - icon_padding, size - icon_padding))
+        button.setIconSize(QSize(size - iconPadding, size - iconPadding))
         button.setFixedSize(QSize(size, size))
 
         button.setStyleSheet(
@@ -102,11 +103,11 @@ class MainWidget(QWidget):
         return button
 
     # Initialize the user interface components
-    def init_ui(self):
+    def setUpUI(self):
         # 音量調整レイアウト
         volumeLayout = QHBoxLayout()
         # ミュートボタン
-        muteBtn = self.image_button("images/volume.png", 25, 5)
+        muteBtn = self.createImageButton("images/volume.png", 25, 5)
         muteBtn.setShortcut("m")
 
         # 音量スライダー
@@ -142,25 +143,25 @@ class MainWidget(QWidget):
         playLayout = QHBoxLayout()
 
         # トリミング開始地点ボタン
-        trimStartBtn = self.image_button("images/start.png")
+        trimStartBtn = self.createImageButton("images/start.png")
         trimStartBtn.setShortcut("s")
         trimStartBtn.setToolTip("トリミング開始地点を設定します")
 
         # 10秒戻しボタン
-        backBtn = self.image_button("images/back.png", icon_padding=5)
+        backBtn = self.createImageButton("images/back.png", iconPadding=5)
         backBtn.setShortcut(Qt.Key.Key_Left)
 
         # 再生ボタン
-        self.playBtn = self.image_button("images/play.png", icon_padding=5)
+        self.playBtn = self.createImageButton("images/play.png", iconPadding=5)
         self.playBtn.setEnabled(False)
         self.playBtn.setShortcut(Qt.Key.Key_Space)
 
         # 10秒進むボタン
-        forwardBtn = self.image_button("images/forward.png", icon_padding=5)
+        forwardBtn = self.createImageButton("images/forward.png", iconPadding=5)
         forwardBtn.setShortcut(Qt.Key.Key_Right)
 
         # トリミング終了地点ボタン
-        trimEndBtn = self.image_button("images/end.png")
+        trimEndBtn = self.createImageButton("images/end.png")
         trimEndBtn.setShortcut("e")
         trimEndBtn.setToolTip("トリミング終了地点を設定します")
 
@@ -178,7 +179,7 @@ class MainWidget(QWidget):
         etcLayout.setContentsMargins(0, 0, 0, 0)
 
         # 保存
-        self.saveBtn = self.image_button("images/save.png", icon_padding=5)
+        self.saveBtn = self.createImageButton("images/save.png", iconPadding=5)
         self.saveBtn.setShortcut("Ctrl+s")
         self.saveBtn.setToolTip("動画を保存します")
         self.saveBtn.setEnabled(False)
@@ -214,13 +215,13 @@ class MainWidget(QWidget):
         self.mediaPlayer.setVideoOutput(self.videowidget)
 
         # ボタンクリックイベント
-        volumeSlider.valueChanged.connect(self.mediaPlayer.set_volume)
-        self.playBtn.clicked.connect(self.mediaPlayer.play_video)
-        muteBtn.clicked.connect(self.mediaPlayer.toggle_mute)
-        backBtn.clicked.connect(self.mediaPlayer.skip_seconds_func(-10))
-        forwardBtn.clicked.connect(self.mediaPlayer.skip_seconds_func(10))
-        trimStartBtn.clicked.connect(self.mediaPlayer.set_trim_start_position)
-        trimEndBtn.clicked.connect(self.mediaPlayer.set_trim_end_position)
+        volumeSlider.valueChanged.connect(self.mediaPlayer.changeVolume)
+        self.playBtn.clicked.connect(self.mediaPlayer.togglePlayback)
+        muteBtn.clicked.connect(self.mediaPlayer.switchMute)
+        backBtn.clicked.connect(self.mediaPlayer.skipSeconds(-10))
+        forwardBtn.clicked.connect(self.mediaPlayer.skipSeconds(10))
+        trimStartBtn.clicked.connect(self.mediaPlayer.setStartTrimPosition)
+        trimEndBtn.clicked.connect(self.mediaPlayer.setTrimEndPos)
 
         # 操作パネルレイアウト
         controlLayout = QVBoxLayout()
@@ -254,18 +255,18 @@ class MainWidget(QWidget):
             self.mediaPlayer.startPlay(url)
 
     def openExportWindow(self):
-        self.pause_editing()
-        export_window = ExportWindow(
+        self.stopEditing()
+        exportWindow = ExportWindow(
             self.settings,
             self.mediaPlayer.source().toString().replace("file:///", ""),
             self.mediaPlayer.trimStartPositon,
             self.mediaPlayer.trimEndPositon,
         )
-        export_window.exec()
+        exportWindow.exec()
 
-    def pause_editing(self):
+    def stopEditing(self):
         if self.mediaPlayer.isPlaying():
-            self.mediaPlayer.play_video()
+            self.mediaPlayer.togglePlayback()
 
 
 class SettingWindow(QDialog):
@@ -280,9 +281,9 @@ class SettingWindow(QDialog):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.init_ui()
+        self.setUpUI()
 
-    def init_ui(self):
+    def setUpUI(self):
         # 出力設定
         outputLabel = QLabel("デフォルトの出力設定")
         outputLabel.setStyleSheet("font-size: 15px; font-weight: bold;")
@@ -298,7 +299,7 @@ class SettingWindow(QDialog):
         self.clipPathEdit.setMinimumWidth(200)
         self.clipPathEdit.setText(self.settings.settings["clipPath"])
         clipPathButton = QPushButton("参照")
-        clipPathButton.clicked.connect(self.open_clip_path_dialog)
+        clipPathButton.clicked.connect(self.selectInstantReplayFolder)
 
         # フォルダ設定レイアウト
         pathLayout = QGridLayout()
@@ -329,7 +330,7 @@ class SettingWindow(QDialog):
 
         # 設定保存ボタン
         saveButton = QPushButton("保存")
-        saveButton.clicked.connect(self.save_settings)
+        saveButton.clicked.connect(self.saveSettings)
 
         # バージョン表示
         versionLabel = QLabel("Version: " + VERSION)
@@ -345,14 +346,14 @@ class SettingWindow(QDialog):
         self.layout.addWidget(versionLabel)
         self.layout.addWidget(saveButton)
 
-    def open_clip_path_dialog(self):
+    def selectInstantReplayFolder(self):
         folder = QFileDialog.getExistingDirectory(
             self, "インスタントリプレイのフォルダを選択"
         )
         if folder:
             self.clipPathEdit.setText(folder)
 
-    def save_settings(self):
+    def saveSettings(self):
         output = self.outputSettingLayout.getOutputSetting()
 
         self.settings.settings["defaultOptions"]["resolution"] = output["resolution"]
@@ -383,90 +384,92 @@ class Window(QMainWindow):
         exitSettings = self.settings.load()
         # ディスプレイのサイズを取得
         screen = QApplication.primaryScreen()
-        self.screen_size = screen.size()
+        self.screenSize = screen.size()
 
-        WINDOW_WIDTH = int(self.screen_size.width() / 1.5)
-        WINDOW_HEIGHT = int(self.screen_size.height() / 1.3)
+        WINDOW_WIDTH = int(self.screenSize.width() / 1.5)
+        WINDOW_HEIGHT = int(self.screenSize.height() / 1.3)
 
         # ウィンドウの背景色を設定
         p = self.palette()
         p.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))
         self.setPalette(p)
 
-        # self.move(
-        #     int((self.screen_size.width() - WINDOW_WIDTH) / 2),
-        #     int((self.screen_size.height() - WINDOW_WIDTH) / 2),
-        # )
-
         self.setWindowTitle("To25")
-        # self.setFixedSize(WINDOW_WIDTH, WINDOW_WIDTH)
         self.setFixedWidth(WINDOW_WIDTH)
         self.setWindowIcon(QIcon("images/icon.png"))
 
-        self.main_widget = MainWidget(self.settings)
-        self.setCentralWidget(self.main_widget)
+        self.mainWidget = MainWidget(self.settings)
+        self.setCentralWidget(self.mainWidget)
 
         # メニューバーの設定
-        self.init_menu_bar()
+        self.setupMenuBar()
 
         self.show()
-        self.move(0, 0)
+        # 画面中央にウィンドウを移動
+        self.move(
+            int((self.screenSize.width() - self.width()) / 2),
+            int((self.screenSize.height() - self.height()) / 2 - 50),
+        )
 
         if exitSettings is False:
             welcomeWindow = WelcomeWindow()
             welcomeWindow.exec()
-            self.open_settings()
+            self.showSettings()
 
         self.autoLoadClip()
 
     # メニューバーの設定
-    def init_menu_bar(self):
+    def setupMenuBar(self):
         menubar = self.menuBar()
 
         # ファイルメニュー
-        file_menu = menubar.addMenu("ファイル")
+        fileMenu = menubar.addMenu("ファイル")
 
         # ファイルを開く
-        open_action = file_menu.addAction("開く")
-        open_action.triggered.connect(self.open)
-        open_action.setShortcut("o")
+        openFileAction = fileMenu.addAction("開く")
+        openFileAction.triggered.connect(self.open)
+        openFileAction.setShortcut("o")
 
         # ファイルを保存
-        save_action = file_menu.addAction("保存")
-        save_action.triggered.connect(self.open)
+        saveFileAction = fileMenu.addAction("保存")
+        saveFileAction.triggered.connect(self.mainWidget.openExportWindow)
 
         # 終了
-        file_menu.addSeparator()
-        exit_action = file_menu.addAction("終了")
-        exit_action.triggered.connect(self.close)
+        fileMenu.addSeparator()
+        exitAction = fileMenu.addAction("終了")
+        exitAction.triggered.connect(self.close)
 
-        edit_menu = menubar.addMenu("編集")
+        editMenu = menubar.addMenu("編集")
 
-        repeat_action = edit_menu.addAction("トリミング範囲内でリピート")
-        repeat_action.triggered.connect(self.main_widget.mediaPlayer.toggle_repeat)
-        repeat_action.setShortcut("r")
+        toggleRepeatWithinTrimming = editMenu.addAction("トリミング範囲内でリピート")
+        toggleRepeatWithinTrimming.triggered.connect(
+            self.mainWidget.mediaPlayer.toggleRepeat
+        )
+        toggleRepeatWithinTrimming.setShortcut("r")
 
         # 設定
-        edit_menu.addSeparator()
-        setting_action = edit_menu.addAction("設定")
-        setting_action.triggered.connect(self.open_settings)
+        editMenu.addSeparator()
+        openSettingsAction = editMenu.addAction("設定")
+        openSettingsAction.triggered.connect(self.showSettings)
 
         # ヘルプメニュー
-        help_menu = menubar.addMenu("ヘルプ")
+        helpMenu = menubar.addMenu("ヘルプ")
+        helpAction = helpMenu.addAction("ヘルプを開く")
+        helpAction.triggered.connect(self.openHelp)
 
     def open(self):
-        self.main_widget.pause_editing()
+        self.mainWidget.stopEditing()
 
-        file_dialog = QFileDialog(self)
-        file_dialog.setWindowTitle("ファイルを開く")
-        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
-        file_dialog.setNameFilter("動画ファイル (*.mp4 *.avi *.mov *.wmv *.flv *.mkv)")
+        fileDialog = QFileDialog(self)
+        fileDialog.setWindowTitle("ファイルを開く")
+        fileDialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+        fileDialog.setNameFilter("動画ファイル (*.mp4 *.avi *.mov *.wmv *.flv *.mkv)")
 
-        file_dialog.setDirectory(self.settings.settings["clipPath"])
-        if file_dialog.exec() == QDialog.DialogCode.Accepted:
+        fileDialog.setDirectory(self.settings.settings["clipPath"])
+        if fileDialog.exec() == QDialog.DialogCode.Accepted:
             try:
-                url = file_dialog.selectedUrls()[0]
-                self.main_widget.mediaPlayer.startPlay(url)
+                url = fileDialog.selectedUrls()[0]
+                self.mainWidget.mediaPlayer.startPlay(url)
             except Exception as e:
                 dialog = QDialog()
                 dialog.setWindowTitle("Error")
@@ -477,20 +480,20 @@ class Window(QMainWindow):
                 dialog.layout().addWidget(QLabel("Error: " + str(e)))
                 dialog.exec()
 
-    def open_settings(self):
-        self.main_widget.pause_editing()
-        setting_window = SettingWindow(self.settings)
-        setting_window.exec()
+    def showSettings(self):
+        self.mainWidget.stopEditing()
+        settingWindow = SettingWindow(self.settings)
+        settingWindow.exec()
 
-    def open_help(self):
-        self.main_widget.pause_editing()
-        pass
+    def openHelp(self):
+        self.mainWidget.stopEditing()
+        webbrowser.open("https://github.com/kooo14/To25")
 
     def autoLoadClip(self):
         if self.settings.settings["autoPlayClip"]:
             clip = autoload.getRecentClip(self.settings.settings["clipPath"])
             if clip:
-                self.main_widget.mediaPlayer.startPlay(QUrl.fromLocalFile(clip))
+                self.mainWidget.mediaPlayer.startPlay(QUrl.fromLocalFile(clip))
                 self.statusBar().showMessage(
                     "最新のクリップを自動再生しました - " + clip, 5000
                 )
@@ -532,25 +535,25 @@ class CustomMediaPlayer(QMediaPlayer):
         self.trimEndPositon = 0
 
         # オーディオ出力を設定
-        self.audio_output = QAudioOutput()
-        self.setAudioOutput(self.audio_output)
+        self.audioOutput = QAudioOutput()
+        self.setAudioOutput(self.audioOutput)
 
         # メディアプレイヤーのシグナルを設定
-        self.playbackStateChanged.connect(self.mediastate_changed)
-        self.durationChanged.connect(self.seekbar.durationChanged)
-        self.positionChanged.connect(self.seekbar.positionChanged)
-        self.positionChanged.connect(self.check_repeat)
+        self.playbackStateChanged.connect(self.handleMediaStateChanged)
+        self.durationChanged.connect(self.seekbar.handleDurationChange)
+        self.positionChanged.connect(self.seekbar.handlePositionChange)
+        self.positionChanged.connect(self.repeatPlaybackIfInRange)
 
     def startPlay(self, url: QUrl):
         self.stop()
         QCoreApplication.processEvents()
         self.setSource(url)
-        self.play_video()
+        self.togglePlayback()
         self.playBtn.setEnabled(True)
         self.saveBtn.setEnabled(True)
 
     # 再生と一時停止を切り替える
-    def play_video(self):
+    def togglePlayback(self):
         if self.isPlaying():
             self.pause()
             self.playBtn.setIcon(QIcon(os.getcwd() + "/images/play.png"))
@@ -559,47 +562,43 @@ class CustomMediaPlayer(QMediaPlayer):
             self.playBtn.setIcon(QIcon(os.getcwd() + "/images/pause.png"))
 
     # 再生状況が変更されたときの処理
-    def mediastate_changed(self, state):
+    def handleMediaStateChanged(self, state):
         if self.isSeeking is False:
             if self.isPlaying() == True:
                 self.playBtn.setIcon(QIcon(os.getcwd() + "/images/pause.png"))
             else:
                 self.playBtn.setIcon(QIcon(os.getcwd() + "/images/play.png"))
 
-    # 動画の再生位置を設定
-    def set_position(self, position: int):
-        self.setPosition(position)
-
     # 音量を設定
-    def set_volume(self, volume: int):
-        self.audioOutput().setVolume(volume / 100)
+    def changeVolume(self, volume: int):
+        self.audioOutput.setVolume(volume / 100)
         self.volume = volume
         if volume == 0:
-            self.set_mute(True)
+            self.setMute(True)
         else:
-            self.set_mute(False)
+            self.setMute(False)
 
     # ミュートを切り替える
-    def toggle_mute(self):
-        self.set_mute(not self.isMute)
+    def switchMute(self):
+        self.setMute(not self.isMute)
 
     # ミュートを設定
-    def set_mute(self, isMute):
+    def setMute(self, isMute):
         self.isMute = isMute
         if isMute:
-            self.audioOutput().setVolume(0)
+            self.audioOutput.setVolume(0)
             self.muteBtn.setIcon(QIcon(os.getcwd() + "/images/mute.png"))
         else:
             if self.volume == 0:
                 self.volume = 100
-            self.audioOutput().setVolume(self.volume / 100)
+            self.audioOutput.setVolume(self.volume / 100)
             self.volumeSlider.setValue(self.volume)
             self.muteBtn.setIcon(QIcon(os.getcwd() + "/images/volume.png"))
 
-    def toggle_repeat(self):
+    def toggleRepeat(self):
         self.isRepeat = not self.isRepeat
 
-    def check_repeat(self):
+    def repeatPlaybackIfInRange(self):
         # トリミング範囲内で再生を繰り返す
         if self.isRepeat:
             if self.position() >= self.trimEndPositon:
@@ -608,7 +607,7 @@ class CustomMediaPlayer(QMediaPlayer):
                 self.setPosition(self.trimStartPositon)
 
     # シーク中かどうかを設定
-    def set_is_seeking(self, isSeeking):
+    def setIsSeeking(self, isSeeking):
         self.isSeeking = isSeeking
         if self.isPlaying() or self.pausedBySeeking:
             if isSeeking:
@@ -619,20 +618,20 @@ class CustomMediaPlayer(QMediaPlayer):
                 self.pausedBySeeking = False
 
     # 指定秒数進める関数を返す
-    def skip_seconds_func(self, seconds):
-        def skip_seconds(self, seconds=seconds, mediaPlayer=self):
+    def skipSeconds(self, seconds):
+        def func(self, seconds=seconds, mediaPlayer=self):
             mediaPlayer.setPosition(mediaPlayer.position() + seconds * 1000)
 
-        return skip_seconds
+        return func
 
     # トリミング開始位置を設定
-    def set_trim_start_position(self):
+    def setStartTrimPosition(self):
         if self.position() < self.trimEndPositon:
             self.trimStartPositon = self.position()
             self.seekbar.update()
 
     # トリミング終了位置を設定
-    def set_trim_end_position(self):
+    def setTrimEndPos(self):
         if self.position() > self.trimStartPositon:
             self.trimEndPositon = self.position()
             self.seekbar.update()
@@ -642,17 +641,17 @@ class CustomVideoWidget(QVideoWidget):
     def __init__(self, mediaPlayer: CustomMediaPlayer):
         super().__init__()
         self.setAcceptDrops(True)
-        self.window_child.installEventFilter(self)
+        self.windowChild.installEventFilter(self)
         self.mediaPlayer = mediaPlayer
 
     @property
-    def window_child(self):
+    def windowChild(self):
         child = self.findChild(QWidget)
         if child.metaObject().className() == "QWindowContainer":
             return child
 
     def eventFilter(self, obj, event):
-        if obj is self.window_child:
+        if obj is self.windowChild:
             if event.type() == QEvent.Type.DragEnter:
                 if event.mimeData().hasUrls():
                     event.accept()
@@ -692,13 +691,13 @@ class SeekBar(QWidget):
         self.layout.addWidget(self.remainSecondsLabel)
 
     # 動画の長さが変更されたときの処理
-    def durationChanged(self, duration):
+    def handleDurationChange(self, duration):
         self.duration = duration
         self.mediaPlayer.trimStartPositon = 0
         self.mediaPlayer.trimEndPositon = duration
 
     # 再生位置が変更されたときの処理
-    def positionChanged(self, position):
+    def handlePositionChange(self, position):
         self.position = position
         self.positionLabel.setText(
             time.strftime("%H:%M:%S", time.gmtime(position / 1000))
@@ -756,13 +755,13 @@ class SeekBar(QWidget):
     def mousePressEvent(self, a0: QMouseEvent) -> None:
         if self.duration != 0 and a0.button() == Qt.MouseButton.LeftButton:
             self.seek(a0.pos().x())
-            self.mediaPlayer.set_is_seeking(True)
+            self.mediaPlayer.setIsSeeking(True)
         return super().mousePressEvent(a0)
 
     # マウスが離されたときの処理
     def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
         if self.duration != 0 and a0.button() == Qt.MouseButton.LeftButton:
-            self.mediaPlayer.set_is_seeking(False)
+            self.mediaPlayer.setIsSeeking(False)
         return super().mouseReleaseEvent(a0)
 
     # ホイールスクロールを検知して1秒スキップする
@@ -842,7 +841,7 @@ class OutputSetting(QGridLayout):
         for size in settings.exportSettings["size"]:
             sizeRadioButton = QRadioButton(str(size))
             self.sizeRadioGroup.addButton(sizeRadioButton)
-            sizeRadioButton.toggled.connect(self.on_sizeRadioButton_toggled)
+            sizeRadioButton.toggled.connect(self.handleSizeRadioButtonToggle)
             if size == self.settings.settings["defaultOptions"]["size"]:
                 sizeRadioButton.setChecked(True)
             sizeLayout.addWidget(sizeRadioButton)
@@ -887,7 +886,7 @@ class OutputSetting(QGridLayout):
         self.outputPathEdit.setMinimumWidth(200)
         self.outputPathEdit.setText(self.settings.settings["outputPath"])
         outputPathButton = QPushButton("参照")
-        outputPathButton.clicked.connect(self.open_output_path_dialog)
+        outputPathButton.clicked.connect(self.openOutputPathDialog)
 
         pathLayout = QGridLayout()
         pathLayout.addWidget(outputPathLabel, 1, 0)
@@ -896,7 +895,7 @@ class OutputSetting(QGridLayout):
 
         self.addLayout(pathLayout, 2, 0, 1, 2)
 
-    def open_output_path_dialog(self):
+    def openOutputPathDialog(self):
         folder = QFileDialog.getExistingDirectory(
             None, "保存先を選択", self.settings.settings["outputPath"]
         )
@@ -904,7 +903,7 @@ class OutputSetting(QGridLayout):
             self.outputPathEdit.setText(folder)
 
     # スロット関数の定義
-    def on_sizeRadioButton_toggled(self, checked):
+    def handleSizeRadioButtonToggle(self, checked):
         # "入力"というラジオボタンが選択された場合のみsizeSpinBoxを表示
         if checked and self.sender().text() == "入力":
             self.sizeSpinBox.setVisible(True)
@@ -948,14 +947,14 @@ class ExportWindow(QDialog):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.init_ui()
+        self.setUpUI()
 
-    def init_ui(self):
+    def setUpUI(self):
         self.outputSettingLayout = OutputSetting(self.settings)
 
         # 保存とキャンセルボタン
         self.saveButton = QPushButton("保存")
-        self.saveButton.clicked.connect(self.export_video)
+        self.saveButton.clicked.connect(self.startExportProcess)
 
         self.cancelButton = QPushButton("キャンセル")
         self.cancelButton.clicked.connect(self.close)
@@ -983,7 +982,7 @@ class ExportWindow(QDialog):
         self.layout.addLayout(fileNameLayout)
         self.layout.addLayout(confirmLayout)
 
-    def export_video(self):
+    def startExportProcess(self):
         output = self.outputSettingLayout.getOutputSetting()
 
         if os.path.exists(self.outputSettingLayout.outputPathEdit.text()) is False:
@@ -1059,9 +1058,9 @@ class WelcomeWindow(QDialog):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.init_ui()
+        self.setUpUI()
 
-    def init_ui(self):
+    def setUpUI(self):
         # メッセージ
         messageLabel = QLabel(
             "To25へようこそ！\n\n"
