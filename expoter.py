@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 
@@ -22,6 +23,7 @@ def exportVideo(
 
     result = subprocess.run(
         f"./ffmpeg {args}",
+        creationflags=subprocess.CREATE_NO_WINDOW,
         capture_output=True,
         text=True,
     )
@@ -31,6 +33,7 @@ def exportVideo(
         args = f'-ss {round(trimStartPosMs / 1000,2)}  -i "{inputPath}" -t {duration} -s {resolution} -r {framerate} -c:v {encoder} -b:v {bitRateKB}KB {noAudioArg} -y "{outputPath}"'
         result = subprocess.run(
             f"./ffmpeg {args}",
+            creationflags=subprocess.CREATE_NO_WINDOW,
             capture_output=True,
             text=True,
         )
