@@ -904,8 +904,8 @@ class OutputSetting(QGridLayout):
 
     # スロット関数の定義
     def handleSizeRadioButtonToggle(self, checked):
-        # "入力"というラジオボタンが選択された場合のみsizeSpinBoxを表示
-        if checked and self.sender().text() == "入力":
+        # "カスタム"というラジオボタンが選択された場合のみsizeSpinBoxを表示
+        if checked and self.sender().text() == "カスタム":
             self.sizeSpinBox.setVisible(True)
         else:
             self.sizeSpinBox.setVisible(False)
@@ -916,7 +916,7 @@ class OutputSetting(QGridLayout):
         output["frameRate"] = int(self.frameRateRadioGroup.checkedButton().text())
         output["noAudio"] = self.noAudioCheckBox.isChecked()
 
-        if self.sizeRadioGroup.checkedButton().text() == "入力":
+        if self.sizeRadioGroup.checkedButton().text() == "カスタム":
             output["size"] = self.sizeSpinBox.value()
         else:
             output["size"] = int(self.sizeRadioGroup.checkedButton().text())
