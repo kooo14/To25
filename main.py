@@ -1023,21 +1023,41 @@ class ExportWindow(QDialog):
 
         while self.thread.is_alive():
             QApplication.processEvents()
-            progress.setValue(getFileSizeKB(outputPath))
+            processingSize = getFileSizeKB(outputPath)
+            if processingSize > int(output["size"]) * 1024 * 0.9:
+                processingSize = int(int(output["size"]) * 1024 * 0.9)
+            progress.setValue(processingSize)
 
         progress.setValue(int(output["size"]) * 1024)
 
         if getFileSizeKB(outputPath) != 0:
-            self.exportDone(self.outputSettingLayout.outputPathEdit.text())
+            self.exportDone(
+                self.outputSettingLayout.outputPathEdit.text(),
+                int(output["size"]) * 1024,
+                getFileSizeKB(outputPath),
+            )
         else:
             self.exportFailed()
 
-    def exportDone(self, outputPath: str):
-        QMessageBox.information(self, "保存完了", "保存が完了しました。")
+    def exportDone(self, outputFolderPath: str, targetSizeKB: int, outputSizeKB: int):
+        outputSizeMB = round(outputSizeKB / 1024, 2)
+
+        if outputSizeKB > targetSizeKB:
+            QMessageBox.warning(
+                self,
+                "保存成功（容量超過）",
+                f"保存に成功しましたが、指定した容量を超えています。\n容量: {outputSizeMB}MB\n動画の長さを短くするか、出力設定を変更してください。",
+            )
+        else:
+            QMessageBox.information(
+                self,
+                "保存完了",
+                "保存が完了しました。\n容量: " + str(outputSizeMB) + "MB",
+            )
 
         if self.settings.settings["openFolderAfterExport"]:
-            outputPath = outputPath.replace("/", "\\")
-            command = f'explorer "{outputPath}"'
+            outputFolderPath = outputFolderPath.replace("/", "\\")
+            command = f'explorer "{outputFolderPath}"'
             subprocess.run(command, shell=True)
 
         self.close()
