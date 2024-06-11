@@ -3,6 +3,7 @@ import subprocess
 import sys
 import threading
 import time
+import webbrowser
 
 from PyQt6.QtCore import (
     QCoreApplication,
@@ -54,7 +55,6 @@ from PyQt6.QtWidgets import (
 import autoload
 import expoter
 import settings
-import webbrowser
 
 BUTTON_SIZE = 40
 WINDOW_WIDTH = 1280
