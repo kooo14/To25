@@ -24,6 +24,7 @@ from PyQt6.QtGui import (
     QPalette,
     QPen,
     QPixmap,
+    QKeyEvent,
 )
 from PyQt6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaFormat, QMediaPlayer
 from PyQt6.QtMultimediaWidgets import QVideoWidget
@@ -63,6 +64,20 @@ WINDOW_HEIGHT = 900
 VERSION = "1.0.0"
 
 
+class PlayButton(QPushButton):
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_Space:
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_Space:
+            event.ignore()
+        else:
+            super().keyReleaseEvent(event)
+
+
 class MainWidget(QWidget):
     def __init__(self, setting: settings.Settings):
         super().__init__()
@@ -75,8 +90,14 @@ class MainWidget(QWidget):
         # ウィンドウの表示
         self.show()
 
-    def createImageButton(self, iconFilePath: str, size=BUTTON_SIZE, iconPadding=10):
-        button = QPushButton()
+    def createImageButton(
+        self, iconFilePath: str, size=BUTTON_SIZE, iconPadding=10, ignoreSpace=False
+    ):
+        if ignoreSpace:
+            button = PlayButton()
+        else:
+            button = QPushButton()
+
         img = QPixmap(iconFilePath).scaled(
             size,
             size,
@@ -152,7 +173,9 @@ class MainWidget(QWidget):
         backBtn.setShortcut(Qt.Key.Key_Left)
 
         # 再生ボタン
-        self.playBtn = self.createImageButton("images/play.png", iconPadding=5)
+        self.playBtn = self.createImageButton(
+            "images/play.png", iconPadding=5, ignoreSpace=True
+        )
         self.playBtn.setEnabled(False)
         self.playBtn.setShortcut(Qt.Key.Key_Space)
 
