@@ -19,12 +19,12 @@ from PyQt6.QtGui import (
     QBrush,
     QColor,
     QIcon,
+    QKeyEvent,
     QMouseEvent,
     QPainter,
     QPalette,
     QPen,
     QPixmap,
-    QKeyEvent,
 )
 from PyQt6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaFormat, QMediaPlayer
 from PyQt6.QtMultimediaWidgets import QVideoWidget
@@ -61,7 +61,7 @@ BUTTON_SIZE = 40
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 900
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 
 class PlayButton(QPushButton):
@@ -652,12 +652,70 @@ class CustomMediaPlayer(QMediaPlayer):
         if self.position() < self.trimEndPositon:
             self.trimStartPositon = self.position()
             self.seekbar.update()
+        else:
+            self.pause()
+
+            dialog = QDialog()
+            dialog.setWindowIcon(QIcon("images/icon.png"))
+            dialog.setModal(True)
+
+            layout = QGridLayout()
+            label = QLabel(
+                "トリミング開始地点はトリミング終了地点より前に設定してください。\nトリミング終了地点を動画の最後に設定しますか？"
+            )
+            layout.addWidget(label, 0, 0, 1, 2)
+            noButton = QPushButton("いいえ")
+            yesButton = QPushButton("はい")
+            layout.addWidget(noButton, 1, 0)
+            layout.addWidget(yesButton, 1, 1)
+            noButton.clicked.connect(dialog.close)
+            yesButton.clicked.connect(self.setTrimEndPosAtEnd)
+            yesButton.clicked.connect(dialog.close)
+
+            dialog.setLayout(layout)
+            dialog.exec()
+
+            self.play()
+
+    def setStartTrimPositionAtStart(self):
+        self.trimStartPositon = 0
+        self.trimEndPositon = self.position()
+        self.seekbar.update()
 
     # トリミング終了位置を設定
     def setTrimEndPos(self):
         if self.position() > self.trimStartPositon:
             self.trimEndPositon = self.position()
             self.seekbar.update()
+        else:
+            self.pause()
+
+            dialog = QDialog()
+            dialog.setWindowIcon(QIcon("images/icon.png"))
+            dialog.setModal(True)
+
+            layout = QGridLayout()
+            label = QLabel(
+                "トリミング終了地点はトリミング開始地点より後に設定してください。\nトリミング開始地点を動画の最初に設定しますか？"
+            )
+            layout.addWidget(label, 0, 0, 1, 2)
+            noButton = QPushButton("いいえ")
+            yesButton = QPushButton("はい")
+            layout.addWidget(noButton, 1, 0)
+            layout.addWidget(yesButton, 1, 1)
+            noButton.clicked.connect(dialog.close)
+            yesButton.clicked.connect(self.setStartTrimPositionAtStart)
+            yesButton.clicked.connect(dialog.close)
+
+            dialog.setLayout(layout)
+            dialog.exec()
+
+            self.play()
+
+    def setTrimEndPosAtEnd(self):
+        self.trimEndPositon = self.duration()
+        self.trimStartPositon = self.position()
+        self.seekbar.update()
 
 
 class CustomVideoWidget(QVideoWidget):
