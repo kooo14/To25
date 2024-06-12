@@ -1057,8 +1057,8 @@ class ExportWindow(QDialog):
 
         if self.settings.settings["openFolderAfterExport"]:
             outputFolderPath = outputFolderPath.replace("/", "\\")
-            command = f'explorer "{outputFolderPath}"'
-            subprocess.run(command, shell=True)
+            commands = ["explorer", outputFolderPath]
+            subprocess.run(commands)
 
         self.close()
 
